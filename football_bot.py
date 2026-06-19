@@ -1,5 +1,7 @@
 import requests
 import time
+from flask import Flask
+import threading
 
 PAGE_ACCESS_TOKEN = "EAAN7Rz9InKsBRqav53KOOCjuJmdYwovWui4xqe4yWFZB5r6hVYzEpPIBrqojY0QuCUjbii7CISkMwDx7TKY3bRf021KnotRKZBLZBHy5K1SSeKL6eZCqwVHcvCIxU68SeP8TWB7XGIBdyGms9T5cObfIPQ6XAz7SgPQQ1f51Y8Pugi2DSpPxBLsUd7o0WZAUBk6SPDNvNJce1ZBoeqFKxfz10tS8glc8SoEEGm0tWOatpbfcGy4A8q9cd2mRwZD"
 PAGE_ID = "597444063788593"
@@ -11,6 +13,15 @@ posted_goals = set()
 posted_redcards = set()
 posted_halftime = set()
 posted_fulltime = set()
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Bot is running"
+
+def run_flask():
+    app.run(host='0.0.0.0', port=10000)
 
 def get_live_scores():
     url = "https://v3.football.api-sports.io/fixtures?live=all"
@@ -51,7 +62,6 @@ def run_bot():
                 season = fixture["league"]["season"]
                 events = fixture.get("events", [])
 
-                # GOAL POST
                 goal_key = f"{fid}_{hs}_{as_}"
                 if goal_key not in posted_goals:
                     scorers = [e for e in events if e["type"] == "Goal"]
@@ -64,7 +74,6 @@ def run_bot():
                     print("Goal posted:", msg)
                     posted_goals.add(goal_key)
 
-                # RED CARD POST
                 redcards = [e for e in events if e["type"] == "Card" and e["detail"] == "Red Card"]
                 for card in redcards:
                     card_key = f"{fid}_red_{card['player']['name']}_{card['time']['elapsed']}"
@@ -74,21 +83,18 @@ def run_bot():
                         print("Red card posted:", msg)
                         posted_redcards.add(card_key)
 
-                # HALF TIME POST
                 if status == "HT" and fid not in posted_halftime:
                     msg = f"⏱️ HALF TIME!\n\n{league}\n\n{home} {hs} - {as_} {away}\n\n#Football #HalfTime #JustNowMatch"
                     post_to_facebook(msg)
                     print("HT posted:", msg)
                     posted_halftime.add(fid)
 
-                # FULL TIME POST WITH STANDINGS
                 if status == "FT" and fid not in posted_fulltime:
                     ft_scorers = [e for e in events if e["type"] == "Goal"]
                     scorers_text = ""
                     for g in ft_scorers:
                         scorers_text += f"\n⚽ {g['player']['name']} {g['time']['elapsed']}'"
 
-                    # Get standings
                     standings_text = ""
                     try:
                         standings_data = get_standings(league_id, season)
@@ -112,4 +118,6 @@ def run_bot():
 
         time.sleep(60)
 
-run_bot()
+if __name__ == "__main__":
+    threading.Thread(target=run_bot).start()
+    run_flask()
