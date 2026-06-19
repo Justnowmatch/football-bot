@@ -42,16 +42,17 @@ def post_to_facebook(message):
     return response.json()
 
 def run_bot():
-    print("Bot is running...")
+    print("Bot is running...", flush=True)
     while True:
+        print("Loop tick - checking matches...", flush=True)
         try:
             data = get_live_scores()
-            print("Matches found:", len(data.get("response", [])))
-            print("Raw API response:", data)
+            print("Matches found:", len(data.get("response", [])), flush=True)
+            print("Raw API response:", data, flush=True)
 
             for fixture in data.get("response", []):
                 league_id_check = fixture["league"]["id"]
-                print("Checking league id:", league_id_check, "-", fixture["league"]["name"])
+                print("Checking league id:", league_id_check, "-", fixture["league"]["name"], flush=True)
 
                 if league_id_check not in LEAGUE_IDS:
                     continue
@@ -68,7 +69,7 @@ def run_bot():
                 season = fixture["league"]["season"]
                 events = fixture.get("events", [])
 
-                print(f"Match: {home} {hs}-{as_} {away} | Status: {status} | Minute: {minute}")
+                print(f"Match: {home} {hs}-{as_} {away} | Status: {status} | Minute: {minute}", flush=True)
 
                 goal_key = f"{fid}_{hs}_{as_}"
                 if goal_key not in posted_goals:
@@ -79,7 +80,7 @@ def run_bot():
                         scorer_text = f"\n⚽ {last['player']['name']} {last['time']['elapsed']}'"
                     msg = f"JUST NOW ⚽\n\n{league}\n\n{home} {hs} - {as_} {away}{scorer_text}\n\n⏱️ {minute}'\n\n#Football #LiveScore #JustNowMatch"
                     post_to_facebook(msg)
-                    print("Goal posted:", msg)
+                    print("Goal posted:", msg, flush=True)
                     posted_goals.add(goal_key)
 
                 redcards = [e for e in events if e["type"] == "Card" and e["detail"] == "Red Card"]
@@ -88,13 +89,13 @@ def run_bot():
                     if card_key not in posted_redcards:
                         msg = f"🟥 RED CARD!\n\n{league}\n\n{home} {hs} - {as_} {away}\n\n🟥 {card['player']['name']} - {card['time']['elapsed']}'\n\n#Football #RedCard #JustNowMatch"
                         post_to_facebook(msg)
-                        print("Red card posted:", msg)
+                        print("Red card posted:", msg, flush=True)
                         posted_redcards.add(card_key)
 
                 if status == "HT" and fid not in posted_halftime:
                     msg = f"⏱️ HALF TIME!\n\n{league}\n\n{home} {hs} - {as_} {away}\n\n#Football #HalfTime #JustNowMatch"
                     post_to_facebook(msg)
-                    print("HT posted:", msg)
+                    print("HT posted:", msg, flush=True)
                     posted_halftime.add(fid)
 
                 if status == "FT" and fid not in posted_fulltime:
@@ -118,14 +119,10 @@ def run_bot():
 
                     msg = f"🏁 FULL TIME!\n\n{league}\n\n{home} {hs} - {as_} {away}\n{scorers_text}{standings_text}\n#Football #FullTime #JustNowMatch"
                     post_to_facebook(msg)
-                    print("FT posted:", msg)
+                    print("FT posted:", msg, flush=True)
                     posted_fulltime.add(fid)
 
         except Exception as e:
-            print("Error:", e)
+            print("Error:", e, flush=True)
 
         time.sleep(60)
-
-if __name__ == "__main__":
-    threading.Thread(target=run_bot).start()
-    run_flask()
