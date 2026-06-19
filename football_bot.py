@@ -46,8 +46,14 @@ def run_bot():
     while True:
         try:
             data = get_live_scores()
+            print("Matches found:", len(data.get("response", [])))
+            print("Raw API response:", data)
+
             for fixture in data.get("response", []):
-                if fixture["league"]["id"] not in LEAGUE_IDS:
+                league_id_check = fixture["league"]["id"]
+                print("Checking league id:", league_id_check, "-", fixture["league"]["name"])
+
+                if league_id_check not in LEAGUE_IDS:
                     continue
 
                 fid = fixture["fixture"]["id"]
@@ -61,6 +67,8 @@ def run_bot():
                 league_id = fixture["league"]["id"]
                 season = fixture["league"]["season"]
                 events = fixture.get("events", [])
+
+                print(f"Match: {home} {hs}-{as_} {away} | Status: {status} | Minute: {minute}")
 
                 goal_key = f"{fid}_{hs}_{as_}"
                 if goal_key not in posted_goals:
